@@ -33,7 +33,7 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import TemplateError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.config_validation import PLATFORM_SCHEMA
-from homeassistant.helpers.event import async_track_state_change
+from homeassistant.helpers.event import async_track_state_change_event
 from homeassistant.helpers.template import result_as_boolean
 
 # pylint: disable=wildcard-import, unused-wildcard-import
@@ -810,8 +810,11 @@ class PidController(SensorEntity):
 
         # pylint: disable=unused-argument
         @callback
-        def sensor_state_listener(entity, old_state, new_state):
+        def sensor_state_listener(event):
             """Handle device state changes."""
+            entity = event.data["entity_id"]
+            old_state = event.data["old_state"]
+            new_state = event.data["new_state"]            
             last_state = self.state
             self._update_sensor(entity=entity)
             if last_state != self.state or entity in self._force_update:
@@ -828,7 +831,7 @@ class PidController(SensorEntity):
 
             ## process listners
             for entity in self._entities:
-                async_track_state_change(self.hass, entity, sensor_state_listener)
+                async_track_state_change_event(self.hass, entity, sensor_state_listener)
 
         self.hass.bus.async_listen_once(EVENT_HOMEASSISTANT_START, sensor_startup)
 
